@@ -70,6 +70,17 @@
       .catch(function(e){ if(callback) callback(e); });
   };
 
+  // ── Catalogo de planes (limites y funciones habilitadas por plan) ──
+  window.PLANES = {
+    gratis:   { label:'Gratis',   maxUsuarios:2,  contable:true,  metas:false, exportarExcel:false },
+    estandar: { label:'Estandar', maxUsuarios:5,  contable:true,  metas:true,  exportarExcel:true  },
+    premium:  { label:'Premium',  maxUsuarios:999, contable:true, metas:true,  exportarExcel:true  }
+  };
+  window.getPlanActual = function(){
+    var p = window.EMPRESA_PLAN || 'gratis';
+    return window.PLANES[p] || window.PLANES.gratis;
+  };
+
   // ── Panel de Super Administrador: crear empresas nuevas y listarlas ──
   window.fbSuperAdminLogin = function(email, pass, callback){
     signInWithEmailAndPassword(auth, email, pass)
@@ -78,7 +89,9 @@
   };
   window.fbSuperAdminLogout = function(){ signOut(auth); };
 
-  window.fbCrearEmpresa = function(nombreEmpresa, adminNombre, adminUsuario, adminPass, callback){
+  window.fbCrearEmpresa = function(nombreEmpresa, adminNombre, adminUsuario, adminPass, plan, callback){
+    if(typeof plan==='function'){ callback=plan; plan='gratis'; } // compatibilidad si alguien llama sin plan
+    plan = plan || 'gratis';
     var slug = nombreEmpresa.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').substring(0,30);
     var sufijo = Math.random().toString(36).substring(2,10);
     var empresaId = slug + '-' + sufijo;
@@ -86,19 +99,12 @@
       uname: adminUsuario.toLowerCase(), nombre: adminNombre, pass: adminPass,
       rol: 'admin', esDueno: true
     };
-    var payload = {};
-    payload['empresas/' + empresaId + '/config'] = {
-      nombre: nombreEmpresa, creado: Date.now()
-    };
-    payload['empresas/' + empresaId + '/datos'] = {
-      users: [primerUsuario]
-    };
-    set(ref(db, 'empresas/' + empresaId + '/config'), {nombre: nombreEmpresa, creado: Date.now()})
+    set(ref(db, 'empresas/' + empresaId + '/config'), {nombre: nombreEmpresa, plan: plan, creado: Date.now()})
       .then(function(){
         return set(ref(db, 'empresas/' + empresaId + '/datos/users'), [primerUsuario]);
       })
       .then(function(){
-        return set(ref(db, 'plataforma_admin/indice/' + empresaId), {nombre: nombreEmpresa, creado: Date.now()});
+        return set(ref(db, 'plataforma_admin/indice/' + empresaId), {nombre: nombreEmpresa, plan: plan, creado: Date.now()});
       })
       .then(function(){ callback(null, empresaId); })
       .catch(function(e){ callback(e, null); });
@@ -123,7 +129,8 @@
     }).catch(function(e){ callback(e, null); });
   };
 
-  window.fbEditarEmpresa = function(empresaId, nombreEmpresa, adminUsuario, adminPassNueva, callback){
+  window.fbEditarEmpresa = function(empresaId, nombreEmpresa, adminUsuario, adminPassNueva, plan, callback){
+    if(typeof plan==='function'){ callback=plan; plan=null; } // compatibilidad si alguien llama sin plan
     get(ref(db, 'empresas/' + empresaId + '/datos/users')).then(function(snap){
       var users = snap.val() || [];
       if(!Array.isArray(users)) users = Object.values(users);
@@ -133,11 +140,16 @@
         if(adminUsuario) users[idx].uname = adminUsuario.toLowerCase();
         if(adminPassNueva) users[idx].pass = adminPassNueva;
       }
-      return Promise.all([
+      var tareas = [
         set(ref(db, 'empresas/' + empresaId + '/config/nombre'), nombreEmpresa),
         set(ref(db, 'plataforma_admin/indice/' + empresaId + '/nombre'), nombreEmpresa),
         set(ref(db, 'empresas/' + empresaId + '/datos/users'), users)
-      ]);
+      ];
+      if(plan){
+        tareas.push(set(ref(db, 'empresas/' + empresaId + '/config/plan'), plan));
+        tareas.push(set(ref(db, 'plataforma_admin/indice/' + empresaId + '/plan'), plan));
+      }
+      return Promise.all(tareas);
     }).then(function(){ callback(null); })
       .catch(function(e){ callback(e); });
   };
@@ -420,7 +432,13 @@ tr:hover td{background:#f8f9ff}
           </div>
         </div>
         <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Contrasena inicial</label>
-        <input type="text" id="pa-admin-pass" placeholder="Contrasena para el primer ingreso" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:14px;margin-top:4px">
+        <input type="text" id="pa-admin-pass" placeholder="Contrasena para el primer ingreso" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:10px;margin-top:4px">
+        <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Plan</label>
+        <select id="pa-plan-empresa" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:14px;margin-top:4px">
+          <option value="gratis">Gratis</option>
+          <option value="estandar">Estandar</option>
+          <option value="premium">Premium</option>
+        </select>
         <button class="btn bgold" onclick="paCrearEmpresa()" style="width:100%">Crear empresa</button>
         <div id="pa-resultado" style="display:none;margin-top:14px;padding:12px 14px;background:#eafaf1;border-radius:8px;font-size:12px;color:#1e8449"></div>
       </div>
@@ -446,7 +464,13 @@ tr:hover td{background:#f8f9ff}
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Usuario admin</label>
       <input type="text" id="pa-edit-user" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:10px;margin-top:4px">
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Nueva contrasena <span style="font-weight:400;text-transform:none">(dejar vacio para no cambiarla)</span></label>
-      <input type="text" id="pa-edit-pass" placeholder="Nueva contrasena" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:16px;margin-top:4px">
+      <input type="text" id="pa-edit-pass" placeholder="Nueva contrasena" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:10px;margin-top:4px">
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Plan</label>
+      <select id="pa-edit-plan" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:16px;margin-top:4px">
+        <option value="gratis">Gratis</option>
+        <option value="estandar">Estandar</option>
+        <option value="premium">Premium</option>
+      </select>
       <div style="display:flex;gap:10px">
         <button class="btn bgray" onclick="paCerrarEditar()" style="flex:1">Cancelar</button>
         <button class="btn bblue" onclick="paGuardarEdicionEmpresa()" style="flex:1">Guardar cambios</button>
@@ -2074,6 +2098,11 @@ function crearUsuario(){
   var rol=g('nu-rol').value;
   if(!nombre||!uname||!pass){toast('Completa todos los campos',1);return;}
   if(users.find(function(u){return u.uname===uname;})){toast('Ese usuario ya existe',1);return;}
+  var planActual=window.getPlanActual?window.getPlanActual():{maxUsuarios:999};
+  if(users.length>=planActual.maxUsuarios){
+    toast('Tu plan actual permite maximo '+planActual.maxUsuarios+' usuarios. Actualiza tu plan para agregar mas.',1);
+    return;
+  }
   var pregunta=g('nu-pregunta')?g('nu-pregunta').value:'Nombre de tu mascota';
   var respuesta=g('nu-respuesta')?g('nu-respuesta').value.trim():'';
   var permisos=getPermsFromForm('p-');
@@ -4792,8 +4821,9 @@ function paCrearEmpresa(){
   var adminNombre=(g('pa-admin-nombre').value||'').trim();
   var adminUsuario=(g('pa-admin-user').value||'').trim();
   var adminPass=(g('pa-admin-pass').value||'').trim();
+  var plan=(g('pa-plan-empresa')?g('pa-plan-empresa').value:'gratis')||'gratis';
   if(!nombreEmpresa||!adminNombre||!adminUsuario||!adminPass){toast('Completa todos los campos',1);return;}
-  window.fbCrearEmpresa(nombreEmpresa,adminNombre,adminUsuario,adminPass,function(err,empresaId){
+  window.fbCrearEmpresa(nombreEmpresa,adminNombre,adminUsuario,adminPass,plan,function(err,empresaId){
     if(err){toast('Error al crear la empresa: '+err.message,1);return;}
     var url=window.location.origin+window.location.pathname+'?empresa='+empresaId;
     var resBox=g('pa-resultado');
@@ -4801,7 +4831,7 @@ function paCrearEmpresa(){
       resBox.style.display='block';
       resBox.innerHTML='<b>Empresa creada!</b><br>Link para '+nombreEmpresa+':<br>'+
         '<input readonly value="'+url+'" onclick="this.select()" style="width:100%;margin-top:6px;padding:6px 8px;font-size:11px;border:1px solid #a9dfbf;border-radius:6px;background:#fff">'+
-        '<div style="margin-top:6px">Usuario: <b>'+adminUsuario+'</b> — Contrasena: <b>'+adminPass+'</b></div>';
+        '<div style="margin-top:6px">Usuario: <b>'+adminUsuario+'</b> — Contrasena: <b>'+adminPass+'</b> — Plan: <b>'+(window.PLANES[plan]?window.PLANES[plan].label:plan)+'</b></div>';
     }
     g('pa-nombre-empresa').value='';g('pa-admin-nombre').value='';g('pa-admin-user').value='';g('pa-admin-pass').value='';
     renderListaEmpresas();
@@ -4826,10 +4856,14 @@ function renderListaEmpresas(){
       var url=window.location.origin+window.location.pathname+'?empresa='+e.id;
       var nombre=(e.info&&e.info.nombre)||e.id;
       var fecha=e.info&&e.info.creado?new Date(e.info.creado).toLocaleDateString('es-CO'):'-';
+      var planId=(e.info&&e.info.plan)||'gratis';
+      var planLabel=(window.PLANES[planId]?window.PLANES[planId].label:planId);
+      var planColores={gratis:'#95a5a6',estandar:'#2980b9',premium:'#d4a017'};
+      var planColor=planColores[planId]||'#95a5a6';
       return '<div style="border:1px solid #eee;border-radius:8px;padding:10px 12px">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'+
           '<div>'+
-            '<div style="font-weight:700;font-size:12px;color:#2c3e50">'+nombre+'</div>'+
+            '<div style="font-weight:700;font-size:12px;color:#2c3e50">'+nombre+' <span style="font-size:9px;font-weight:700;color:#fff;background:'+planColor+';padding:2px 7px;border-radius:10px;text-transform:uppercase;vertical-align:middle">'+planLabel+'</span></div>'+
             '<div style="font-size:10px;color:#999;margin-bottom:6px">Creada: '+fecha+'</div>'+
           '</div>'+
           '<div style="display:flex;gap:6px;flex-shrink:0">'+
@@ -4850,6 +4884,7 @@ function paAbrirEditar(empresaId){
     g('pa-edit-nombre').value=(datos.config&&datos.config.nombre)||'';
     g('pa-edit-user').value=(datos.admin&&datos.admin.uname)||'';
     g('pa-edit-pass').value='';
+    if(g('pa-edit-plan'))g('pa-edit-plan').value=(datos.config&&datos.config.plan)||'gratis';
     g('pa-editar-modal').style.display='flex';
   });
 }
@@ -4863,8 +4898,9 @@ function paGuardarEdicionEmpresa(){
   var nombre=(g('pa-edit-nombre').value||'').trim();
   var usuario=(g('pa-edit-user').value||'').trim();
   var pass=(g('pa-edit-pass').value||'').trim();
+  var plan=(g('pa-edit-plan')?g('pa-edit-plan').value:'gratis')||'gratis';
   if(!nombre||!usuario){toast('Completa el nombre y el usuario',1);return;}
-  window.fbEditarEmpresa(empresaId,nombre,usuario,pass,function(err){
+  window.fbEditarEmpresa(empresaId,nombre,usuario,pass,plan,function(err){
     if(err){toast('Error al guardar: '+err.message,1);return;}
     toast('Empresa actualizada correctamente');
     paCerrarEditar();
@@ -4885,6 +4921,7 @@ function aplicarMarcaEmpresa(){
   if(typeof window.fbGetInfoEmpresa!=='function')return;
   window.fbGetInfoEmpresa(function(err,info){
     if(err||!info)return;
+    window.EMPRESA_PLAN=info.plan||'gratis';
     if(info.nombre){
       var nombreUpper=info.nombre.toUpperCase();
       var d1=g('dog-nombre-empresa');if(d1)d1.textContent=nombreUpper;
