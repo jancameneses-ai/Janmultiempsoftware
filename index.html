@@ -426,15 +426,75 @@ tr:hover td{background:#f8f9ff}
 </head>
 <body>
 <!-- ═══ PANEL DE SUPER ADMINISTRADOR (crear y listar empresas) ═══ -->
-<div id="panel-admin" style="display:none;position:fixed;inset:0;z-index:9999;background:#1a252f;overflow-y:auto;padding:30px 16px">
+<div id="panel-admin" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--pa-bg,#1a252f);overflow-y:auto;padding:30px 16px;font-family:var(--pa-font,'Poppins',sans-serif)">
+  <button onclick="paAbrirAjustesPanel()" title="Ajustes de apariencia" style="position:fixed;top:16px;right:16px;z-index:10001;width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+
+  <!-- Modal de ajustes de apariencia del Panel de Empresas -->
+  <div id="pa-ajustes-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10002;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto">
+      <div style="font-size:14px;font-weight:700;color:#2c3e50;margin-bottom:16px;text-transform:uppercase">Apariencia del panel</div>
+
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Color de fondo</label>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px">
+        <input type="color" id="pa-aj-bg" value="#1a252f" style="width:44px;height:36px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;padding:2px">
+        <span style="font-size:11px;color:#999">El fondo oscuro detras de las tarjetas</span>
+      </div>
+
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Color del titulo</label>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px">
+        <input type="color" id="pa-aj-titulo" value="#c9a227" style="width:44px;height:36px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;padding:2px">
+        <span style="font-size:11px;color:#999">"Panel de Empresas"</span>
+      </div>
+
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Color del subtitulo</label>
+      <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px">
+        <input type="color" id="pa-aj-subtitulo" value="#cccccc" style="width:44px;height:36px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;padding:2px">
+        <span style="font-size:11px;color:#999">"Administracion de la plataforma"</span>
+      </div>
+
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Estilo de letra</label>
+      <select id="pa-aj-fuente" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin:6px 0 14px">
+        <option value="'Poppins',sans-serif">Poppins (actual)</option>
+        <option value="'Georgia',serif">Georgia (clasica)</option>
+        <option value="'Courier New',monospace">Courier New (tecnica)</option>
+        <option value="'Verdana',sans-serif">Verdana (simple)</option>
+        <option value="'Trebuchet MS',sans-serif">Trebuchet MS (moderna)</option>
+      </select>
+
+      <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Forma de las tarjetas</label>
+      <div style="display:flex;gap:8px;margin:6px 0 18px" id="pa-aj-formas">
+        <div onclick="paSeleccionarForma('2px')" data-forma="2px" style="flex:1;text-align:center;cursor:pointer;padding:10px 4px;border:2px solid #e0e0e0;border-radius:6px">
+          <div style="width:100%;height:20px;background:#ddd;border-radius:2px;margin-bottom:4px"></div>
+          <span style="font-size:9px;color:#999">Cuadrada</span>
+        </div>
+        <div onclick="paSeleccionarForma('14px')" data-forma="14px" style="flex:1;text-align:center;cursor:pointer;padding:10px 4px;border:2px solid #2c3e50;border-radius:6px">
+          <div style="width:100%;height:20px;background:#ddd;border-radius:8px;margin-bottom:4px"></div>
+          <span style="font-size:9px;color:#999">Redondeada</span>
+        </div>
+        <div onclick="paSeleccionarForma('26px')" data-forma="26px" style="flex:1;text-align:center;cursor:pointer;padding:10px 4px;border:2px solid #e0e0e0;border-radius:6px">
+          <div style="width:100%;height:20px;background:#ddd;border-radius:14px;margin-bottom:4px"></div>
+          <span style="font-size:9px;color:#999">Muy redondeada</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn bgray" onclick="paCerrarAjustesPanel()" style="flex:1">Cancelar</button>
+        <button class="btn bp" onclick="paRestablecerAjustesPanel()" style="flex:1">Restablecer</button>
+        <button class="btn bblue" onclick="paGuardarAjustesPanel()" style="flex:1">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div style="max-width:520px;margin:0 auto">
     <div style="text-align:center;margin-bottom:24px">
-      <div style="color:#c9a227;font-size:22px;font-weight:700">Panel de Empresas</div>
-      <div style="color:rgba(255,255,255,.5);font-size:12px">Administracion de la plataforma</div>
+      <div style="color:var(--pa-title,#c9a227);font-size:22px;font-weight:700">Panel de Empresas</div>
+      <div style="color:var(--pa-subtitle,rgba(255,255,255,.5));font-size:12px">Administracion de la plataforma</div>
     </div>
 
     <!-- LOGIN DEL SUPER ADMIN -->
-    <div id="pa-login-box" style="background:#fff;border-radius:14px;padding:26px 24px">
+    <div id="pa-login-box" style="background:#fff;border-radius:var(--pa-radius,14px);padding:26px 24px">
       <div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:14px;text-transform:uppercase">Iniciar sesion</div>
       <div id="pa-login-err" style="display:none;background:#fadbd8;color:#922b21;border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:12px;font-weight:600"></div>
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Correo</label>
@@ -446,7 +506,7 @@ tr:hover td{background:#f8f9ff}
 
     <!-- CONTENIDO DEL PANEL (visible tras iniciar sesion) -->
     <div id="pa-content" style="display:none">
-      <div style="background:#fff;border-radius:14px;padding:22px;margin-bottom:16px">
+      <div style="background:#fff;border-radius:var(--pa-radius,14px);padding:22px;margin-bottom:16px">
         <div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:14px;text-transform:uppercase">Crear empresa nueva</div>
         <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Nombre del negocio</label>
         <input type="text" id="pa-nombre-empresa" placeholder="Ej: Ferreteria El Tornillo" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:10px;margin-top:4px">
@@ -472,7 +532,7 @@ tr:hover td{background:#f8f9ff}
         <div id="pa-resultado" style="display:none;margin-top:14px;padding:12px 14px;background:#eafaf1;border-radius:8px;font-size:12px;color:#1e8449"></div>
       </div>
 
-      <div style="background:#fff;border-radius:14px;padding:22px">
+      <div style="background:#fff;border-radius:var(--pa-radius,14px);padding:22px">
         <div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:14px;text-transform:uppercase">Empresas registradas</div>
         <input type="text" id="pa-buscar" placeholder="Buscar empresa..." oninput="renderListaEmpresas()" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;margin-bottom:12px">
         <div id="pa-lista-empresas" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -485,7 +545,7 @@ tr:hover td{background:#f8f9ff}
 
   <!-- Modal editar empresa -->
   <div id="pa-editar-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center;padding:20px">
-    <div style="background:#fff;border-radius:14px;padding:24px;max-width:440px;width:100%">
+    <div style="background:#fff;border-radius:var(--pa-radius,14px);padding:24px;max-width:440px;width:100%">
       <div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:14px;text-transform:uppercase">Editar empresa</div>
       <input type="hidden" id="pa-edit-id">
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Nombre del negocio</label>
@@ -6037,6 +6097,87 @@ function fmtFechaDDMMYYYY(fecha){
   var d = fecha || new Date();
   return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
+// ── AJUSTES DE APARIENCIA DEL PANEL DE EMPRESAS ──
+var PA_AJUSTES_KEY='pa_ajustes_panel_v1';
+var PA_AJUSTES_DEFAULT={bg:'#1a252f',titulo:'#c9a227',subtitulo:'#cccccc',fuente:"'Poppins',sans-serif",forma:'14px'};
+function paAplicarAjustesVisuales(aj){
+  var panel=g('panel-admin');
+  if(!panel)return;
+  panel.style.setProperty('--pa-bg',aj.bg);
+  panel.style.setProperty('--pa-title',aj.titulo);
+  panel.style.setProperty('--pa-subtitle',aj.subtitulo);
+  panel.style.setProperty('--pa-radius',aj.forma);
+  panel.style.fontFamily=aj.fuente;
+}
+function paCargarAjustesPanel(){
+  var aj=PA_AJUSTES_DEFAULT;
+  try{
+    var guardado=localStorage.getItem(PA_AJUSTES_KEY);
+    if(guardado)aj=Object.assign({},PA_AJUSTES_DEFAULT,JSON.parse(guardado));
+  }catch(e){}
+  paAplicarAjustesVisuales(aj);
+}
+function paAbrirAjustesPanel(){
+  var aj=PA_AJUSTES_DEFAULT;
+  try{
+    var guardado=localStorage.getItem(PA_AJUSTES_KEY);
+    if(guardado)aj=Object.assign({},PA_AJUSTES_DEFAULT,JSON.parse(guardado));
+  }catch(e){}
+  g('pa-aj-bg').value=aj.bg;
+  g('pa-aj-titulo').value=aj.titulo;
+  g('pa-aj-subtitulo').value=aj.subtitulo;
+  g('pa-aj-fuente').value=aj.fuente;
+  paSeleccionarForma(aj.forma,true);
+  // Vista previa en vivo mientras se edita
+  ['pa-aj-bg','pa-aj-titulo','pa-aj-subtitulo'].forEach(function(id){
+    g(id).oninput=paPrevisualizarAjustes;
+  });
+  g('pa-aj-fuente').onchange=paPrevisualizarAjustes;
+  g('pa-ajustes-modal').style.display='flex';
+}
+function paPrevisualizarAjustes(){
+  paAplicarAjustesVisuales(paLeerFormularioAjustes());
+}
+function paLeerFormularioAjustes(){
+  var formaActiva=document.querySelector('#pa-aj-formas [data-forma].activa');
+  return {
+    bg:g('pa-aj-bg').value,
+    titulo:g('pa-aj-titulo').value,
+    subtitulo:g('pa-aj-subtitulo').value,
+    fuente:g('pa-aj-fuente').value,
+    forma:formaActiva?formaActiva.getAttribute('data-forma'):PA_AJUSTES_DEFAULT.forma
+  };
+}
+function paSeleccionarForma(valor,sinGuardar){
+  document.querySelectorAll('#pa-aj-formas [data-forma]').forEach(function(el){
+    el.style.borderColor=el.getAttribute('data-forma')===valor?'#2c3e50':'#e0e0e0';
+    el.classList.toggle('activa',el.getAttribute('data-forma')===valor);
+  });
+  if(!sinGuardar)paPrevisualizarAjustes();
+}
+function paCerrarAjustesPanel(){
+  g('pa-ajustes-modal').style.display='none';
+  // Si cancelo, volver a aplicar lo que estaba realmente guardado (deshacer la vista previa)
+  paCargarAjustesPanel();
+}
+function paGuardarAjustesPanel(){
+  var aj=paLeerFormularioAjustes();
+  try{localStorage.setItem(PA_AJUSTES_KEY,JSON.stringify(aj));}catch(e){}
+  paAplicarAjustesVisuales(aj);
+  g('pa-ajustes-modal').style.display='none';
+  toast('Apariencia del panel actualizada');
+}
+function paRestablecerAjustesPanel(){
+  try{localStorage.removeItem(PA_AJUSTES_KEY);}catch(e){}
+  g('pa-aj-bg').value=PA_AJUSTES_DEFAULT.bg;
+  g('pa-aj-titulo').value=PA_AJUSTES_DEFAULT.titulo;
+  g('pa-aj-subtitulo').value=PA_AJUSTES_DEFAULT.subtitulo;
+  g('pa-aj-fuente').value=PA_AJUSTES_DEFAULT.fuente;
+  paSeleccionarForma(PA_AJUSTES_DEFAULT.forma);
+  paAplicarAjustesVisuales(PA_AJUSTES_DEFAULT);
+  toast('Apariencia restablecida a los valores originales');
+}
+
 // ── PANEL DE SUPER ADMINISTRADOR ──
 var paEmpresasCache={};
 function paLogin(){
@@ -7193,6 +7334,7 @@ window.addEventListener('load',function(){
     document.title='Panel de Empresas — Janmultiemp';
     var pa=g('panel-admin');if(pa)pa.style.display='block';
     var lo0=g('login-overlay');if(lo0)lo0.style.display='none';
+    paCargarAjustesPanel();
     return;
   }
   ['med','mdet','mcuot','medit-venta','m-edit-user','m-edit-cont'].forEach(function(id){
