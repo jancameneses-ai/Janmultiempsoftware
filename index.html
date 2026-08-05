@@ -1939,14 +1939,22 @@ function procesarDatos(data){
   aplicarFondoUsuario();
 }
 
-// Garantiza que exista exactamente un usuario "Dueno" (perfil unico protegido).
-// Si por alguna razon no hay ninguno marcado, se asigna automaticamente al primer administrador.
+// Garantiza que exista EXACTAMENTE un usuario "Dueno" (perfil unico protegido):
+// si no hay ninguno, se asigna al primer administrador; si por error hay mas de
+// uno (esto es lo que causaba que se "acumularan" varios Admin Soporte), se deja
+// solo el primero y se le quita el permiso a los demas.
 function asegurarDueno(){
-  var yaHayDueno=users.some(function(u){return u.esDueno;});
-  if(!yaHayDueno){
+  var duenos=users.filter(function(u){return u.esDueno;});
+  var seCorrigioAlgo=false;
+  if(duenos.length===0){
     var primerAdmin=users.find(function(u){return u.rol==='admin';})||users[0];
-    if(primerAdmin)primerAdmin.esDueno=true;
+    if(primerAdmin){primerAdmin.esDueno=true;seCorrigioAlgo=true;}
+  }else if(duenos.length>1){
+    duenos.forEach(function(u,idx){
+      if(idx>0){u.esDueno=false;seCorrigioAlgo=true;}
+    });
   }
+  if(seCorrigioAlgo)save();
 }
 
 function cargar(onPrimeraCarga){
