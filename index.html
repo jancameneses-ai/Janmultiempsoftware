@@ -7235,7 +7235,20 @@ window.addEventListener('load',function(){
   if(sesionPendiente){
     // Hay un token de sesion valido: NO decidir nada todavia, esperar a que
     // Firebase traiga los datos reales (incluyendo el usuario) antes de sacar a login.
+    // IMPORTANTE: con un limite de tiempo maximo, para que la pantalla de carga
+    // nunca se quede atascada indefinidamente si la conexion es lenta o falla en
+    // silencio (eso tapaba toda la app y los botones parecian no responder).
+    var _yaDecidido=false;
+    var _timeoutCarga=setTimeout(function(){
+      if(_yaDecidido)return;
+      _yaDecidido=true;
+      console.warn('La carga tardo demasiado, mostrando login por seguridad');
+      mostrarLogin();
+    },8000);
     cargar(function(exito){
+      if(_yaDecidido)return;
+      _yaDecidido=true;
+      clearTimeout(_timeoutCarga);
       if(exito&&aplicarSesion(sesionPendiente)){
         mostrarAppConBarra();
       }else{
