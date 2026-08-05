@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#2c3e50">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Maximuebles">
-<title>Maximuebles Jo</title>
+<title id="page-doc-title">Maximuebles Jo</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
@@ -437,7 +437,7 @@ tr:hover td{background:#f8f9ff}
       <div style="font-size:13px;font-weight:700;color:#2c3e50;margin-bottom:14px;text-transform:uppercase">Iniciar sesion</div>
       <div id="pa-login-err" style="display:none;background:#fadbd8;color:#922b21;border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:12px;font-weight:600"></div>
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Correo</label>
-      <input type="email" id="pa-email" placeholder="tu-correo@gmail.com" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;margin-top:4px" onkeydown="if(event.key==='Enter')paLogin()">
+      <input type="email" id="pa-email" placeholder="tu-correo@gmail.com" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;margin-top:4px;text-transform:none" onkeydown="if(event.key==='Enter')paLogin()">
       <label style="font-size:11px;color:#666;font-weight:600;text-transform:uppercase">Contrasena</label>
       <input type="password" id="pa-pass" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:16px;margin-top:4px" onkeydown="if(event.key==='Enter')paLogin()">
       <button class="btn bg" onclick="paLogin()" style="width:100%">Ingresar</button>
@@ -7178,6 +7178,7 @@ document.addEventListener('click',function(e){
 window.addEventListener('load',function(){
   // Si es el Panel de Super Administrador, mostrar solo eso y salir
   if(window.ES_PANEL_ADMIN){
+    document.title='Panel de Empresas — Janmultiemp';
     var pa=g('panel-admin');if(pa)pa.style.display='block';
     var lo0=g('login-overlay');if(lo0)lo0.style.display='none';
     return;
